@@ -1,8 +1,6 @@
 #include "server.hpp"
 
 size_t handle_(char* readbuf,size_t readlen ,char** writebuf) {
-        std::cout << "爆発" << std::endl;
-
     std::cout << "Request received:\n" << readbuf << std::endl;
 
     std::string response;
