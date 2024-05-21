@@ -6,17 +6,18 @@
 
 
 bool end_flag = false;
-
+/// @brief ポートを設定したいだけ
+/// @param port 
 void server::setPORT(int port)
 {
     if(henkou_flag)this->PORT = port;
 }
 
 
-/// @brief 
-/// @param address （戻っても使うためポインタ）
-/// @param addrlen （これも使う）
-/// @return ポート番号
+/// @brief OSからソケットをもらって初期化するまでのメゾット
+/// @param address struct sockaddr_in*　（戻っても使うためポインタ acceptでいる）
+/// @param addrlen int                  （これも戻り値　sockaddrの大きさが入る）
+/// @return int ポート番号
 int server::init_fd(struct sockaddr_in *address, int *addrlen)
 {
     int opt = 1, server_fd;
@@ -52,21 +53,21 @@ int server::init_fd(struct sockaddr_in *address, int *addrlen)
     return server_fd;
 }
 
-//ctrl+Cで正常終了するためのやつ
-/// @brief 
+/// @brief ctrl+Cで正常終了するためのやつ
 /// @param sig 
 void  abrt_handler(int sig) {
   end_flag = true;
 }
 
-//起動時にこのメゾットを起動する
-/// @brief 
+/// @brief これを呼び出すとctrl+Cをするまでサーバーが起動する 
 void server::run_server()
 {
     int server_fd;
     struct sockaddr_in address;
     int addrlen, client_socket;
+    //ポートの初期化
     server_fd = init_fd(&address, &addrlen);
+    //ctrl+Cの設定（多分今後場所を変える）
     if ( signal(SIGINT, abrt_handler) == SIG_ERR ) {
         exit(1);
     }
@@ -74,30 +75,35 @@ void server::run_server()
     char* write_buf;
     while (!end_flag)
     {
+        //呼び出し待機
         if ((client_socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t*)&addrlen)) < 0) {
             perror("accept");
             close(server_fd);
             exit(EXIT_FAILURE);
         }
+        //呼び出されたら相手からの要求を読む
         int length = read(client_socket, buf, BUFFER_SIZE);
+        //hc（コンストラクタに指定したメゾット）を呼び出して、リターンをもらう
         int write_len = this->hc(buf,length, &write_buf);
+        //相手にレスポンスを返す
         write(client_socket, write_buf, write_len);
+        //終了
         close(client_socket);
     }
     close(server_fd);
 }
 
-/// @brief 
-/// @param port 
-/// @param buffer_size 
-/// @param hc 
+/// @brief コンストラクタ
+/// @param port (ポート番号)
+/// @param buffer_size (バッファのサイズの指定)
+/// @param hc (相手の要求を読んで、レスポンスを返すためのメゾットの変数)
 server::server(int port,int buffer_size, handle_client hc)
 {
     BUFFER_SIZE =buffer_size;
     setPORT(port);
     this->hc = hc;
 }
-/// @brief 
+/// @brief ↑のバッファサイズの指定がない版　サイズは1024byteになります
 /// @param port 
 /// @param hc 
 server::server(int port, handle_client hc){
@@ -107,6 +113,7 @@ server::server(int port, handle_client hc){
     this->hc = hc;
 }
 
+/// @brief deleteのときに呼び出されるメゾット（基本的には気にしないもの　C++の書き方だと思って）
 server::~server()
 {
 }
