@@ -1,6 +1,5 @@
 #include "server.hpp"
-#include <stdlib.h>
-#include <stdio.h>
+#include <cstdlib>
 #include <thread>
 #include <cstdio>
 #include <cstdint>
@@ -13,19 +12,27 @@ void server::setPORT(int port)
     if(henkou_flag)this->PORT = port;
 }
 
+
+/// @brief 
+/// @param address （戻っても使うためポインタ）
+/// @param addrlen （これも使う）
+/// @return ポート番号
 int server::init_fd(struct sockaddr_in *address, int *addrlen)
 {
     int opt = 1, server_fd;
     *addrlen = sizeof(struct sockaddr_in);
+    //ソケットをOSからもらう
     if((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0){
         perror("socket failed");
         exit(EXIT_FAILURE);
     }
+    //ソケットに用途を設定する
     if(setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt))){
         perror("setsockopt");
         close(server_fd);
         close(EXIT_FAILURE);
     }
+    //ポートを指定して、ソケットと紐付けをする
     address->sin_family= AF_INET;
     address->sin_addr.s_addr = INADDR_ANY;
     address->sin_port = htons(this->PORT);
@@ -35,6 +42,7 @@ int server::init_fd(struct sockaddr_in *address, int *addrlen)
         exit(EXIT_FAILURE);
     }
 
+    //待ち状態にする
     if (listen(server_fd, 3) < 0) {
         perror("listen");
         close(server_fd);
@@ -44,11 +52,15 @@ int server::init_fd(struct sockaddr_in *address, int *addrlen)
     return server_fd;
 }
 
+//ctrl+Cで正常終了するためのやつ
+/// @brief 
+/// @param sig 
 void  abrt_handler(int sig) {
   end_flag = true;
 }
 
-
+//起動時にこのメゾットを起動する
+/// @brief 
 void server::run_server()
 {
     int server_fd;
@@ -75,12 +87,19 @@ void server::run_server()
     close(server_fd);
 }
 
+/// @brief 
+/// @param port 
+/// @param buffer_size 
+/// @param hc 
 server::server(int port,int buffer_size, handle_client hc)
 {
     BUFFER_SIZE =buffer_size;
     setPORT(port);
     this->hc = hc;
 }
+/// @brief 
+/// @param port 
+/// @param hc 
 server::server(int port, handle_client hc){
    
     BUFFER_SIZE =1024;

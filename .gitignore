@@ -1,2 +1,4 @@
-.vscoode/
+.vscoode/**
+.vscode
 server
+.gitignore
